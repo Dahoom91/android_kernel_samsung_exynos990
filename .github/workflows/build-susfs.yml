@@ -1,12 +1,12 @@
-name: Build ArtisanKRNL SuSFS Branch
+name: Build ArtisanKRNL bpf111 + SuSFS
 
 on:
   workflow_dispatch:
     inputs:
       device_code:
-        description: 'رمز الجهاز (y2slte للـ 4G أو y2sxxx للـ 5G)'
+        description: 'Device code (y2sxxx for SM-G986B)'
         required: true
-        default: 'y2slte'
+        default: 'y2sxxx'
 
 jobs:
   build-kernel:
@@ -21,11 +21,25 @@ jobs:
           haskell: true
           large-packages: true
 
-      - name: Checkout SuSFS Branch
+      - name: Checkout Latest Branch (bpf111)
         uses: actions/checkout@v4
         with:
-          ref: susfs
+          ref: bpf111
+          fetch-depth: 0
           submodules: recursive
+
+      - name: Merge SuSFS Commits from susfs Branch
+        run: |
+          git config user.name "Builder"
+          git config user.email "builder@github.com"
+          git fetch origin susfs
+          SUSFS_COMMIT=$(git log origin/susfs --grep="susfs" -i -n 1 --format="%H")
+          if [ -n "$SUSFS_COMMIT" ]; then
+            echo "Found SuSFS commit: $SUSFS_COMMIT"
+            git cherry-pick -X theirs $SUSFS_COMMIT || true
+          else
+            git merge origin/susfs --no-commit --no-ff -X theirs || true
+          fi
 
       - name: Install Dependencies
         run: |
@@ -35,10 +49,10 @@ jobs:
       - name: Build Kernel
         run: |
           chmod +x build.sh
-          ./build.sh -m ${{ github.event.inputs.device_code }} -k y -c n
+          ./build.sh -m ${{ github.event.inputs.device_code }} -k y
 
       - name: Upload Flashable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: ArtisanKRNL-SuSFS-${{ github.event.inputs.device_code }}
+          name: ArtisanKRNL-bpf111-SuSFS-${{ github.event.inputs.device_code }}
           path: build/out/${{ github.event.inputs.device_code }}/*.zip
