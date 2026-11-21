@@ -49,10 +49,10 @@ jobs:
       - name: Build Kernel
         run: |
           chmod +x build.sh
-          ./build.sh -m ${{ github.event.inputs.device_code }} -k y
+          ./build.sh -m y2s -k y
 
       - name: Upload Flashable ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: ArtisanKRNL-bpf111-SuSFS-${{ github.event.inputs.device_code }}
-          path: build/out/${{ github.event.inputs.device_code }}/*.zip
+          name: ArtisanKRNL-bpf111-SuSFS
+          path: build/out/y2s/*.zip
